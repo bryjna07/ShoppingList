@@ -11,6 +11,7 @@ import Then
 
 final class MainView: UIView {
     
+    ///Mark: - MainView Property
     let searchBar = UISearchBar().then {
         $0.placeholder = "브랜드, 상품, 프로필, 태그 등"
         $0.searchTextField.attributedPlaceholder = NSAttributedString(string: $0.searchTextField.placeholder ?? "", attributes: [.foregroundColor : UIColor.systemGray3]) // 플레이스홀더 색상
@@ -32,10 +33,9 @@ final class MainView: UIView {
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
-    
 }
 
+///Mark: - MainView AutoLayout
 extension MainView: ConfigureUI {
     func configureHierarachy() {
         [
@@ -50,12 +50,11 @@ extension MainView: ConfigureUI {
     func configureLayout() {
         searchBar.snp.makeConstraints {
             $0.top.horizontalEdges.equalTo(safeAreaLayoutGuide).inset(16)
+            $0.height.equalTo(44)
         }
     }
     
     func configureView() {
         backgroundColor = .black
-    }
-    
-    
+    } 
 }
