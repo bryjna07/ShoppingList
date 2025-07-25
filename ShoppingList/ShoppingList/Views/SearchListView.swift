@@ -12,8 +12,7 @@ import Then
 final class SearchListView: UIView {
     
     ///Mark: - SearchListView Property
-    private let resultCountLabel = UILabel().then {
-        $0.text = "test  1123"
+    let resultCountLabel = UILabel().then {
         $0.textColor = .systemGreen
         $0.font = .systemFont(ofSize: 14)
     }
@@ -34,7 +33,8 @@ final class SearchListView: UIView {
         $0.scrollDirection = .vertical
         $0.minimumLineSpacing = 16
         $0.sectionInset = UIEdgeInsets(top: 8, left: 16, bottom: 16, right: 16)
-        $0.itemSize = CGSize(width: (UIScreen.main.bounds.width - 48) / 2, height: 200)
+        let width = (UIScreen.main.bounds.width - 48) / 2
+        $0.itemSize = CGSize(width: width, height: width + 100) /// 높이 계산 필요
     }
     
     lazy var collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout).then {
@@ -48,7 +48,7 @@ final class SearchListView: UIView {
         configureLayout()
         configureView()
     }
-
+    
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }

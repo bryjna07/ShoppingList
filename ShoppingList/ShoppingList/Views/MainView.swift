@@ -29,7 +29,7 @@ final class MainView: UIView {
         configureLayout()
         configureView()
     }
-
+    
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
@@ -44,7 +44,6 @@ extension MainView: ConfigureUI {
         ].forEach {
             addSubview($0)
         }
-        
     }
     
     func configureLayout() {
