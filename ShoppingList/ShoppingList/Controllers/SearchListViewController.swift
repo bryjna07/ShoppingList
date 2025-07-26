@@ -13,6 +13,8 @@ final class SearchListViewController: UIViewController {
     
     private var itemData: ItemData?
     
+    private let numberFormatter = YJFormatter.shared
+    
     private var list: [Item] = []
     
     init(title: String, data: ItemData) {
@@ -35,7 +37,7 @@ final class SearchListViewController: UIViewController {
         listView.collectionView.delegate = self
         listView.collectionView.dataSource = self
         guard let itemData else { return }
-        listView.resultCountLabel.text = "\(itemData.total)개의 검색 결과"
+        listView.resultCountLabel.text = itemData.totalString
     }
 }
 

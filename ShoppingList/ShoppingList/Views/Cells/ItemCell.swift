@@ -73,8 +73,8 @@ extension ItemCell: ConfigureUI {
     func configureUIWithData() {
         guard let item else { return } // 예외처리
         mallLabel.text = item.mallName
-        titleLabel.text = item.title
-        priceLabel.text = item.lprice // 콤마처리
+        titleLabel.text = item.titleForUI
+        priceLabel.text = item.price
         let url = URL(string: item.image)
         imageView.setKFImage(from: url)
     }
