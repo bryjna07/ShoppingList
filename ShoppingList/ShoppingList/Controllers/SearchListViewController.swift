@@ -32,6 +32,8 @@ final class SearchListViewController: UIViewController {
     
     var currentStart = 1
     
+    var isLoading = false
+    
     init(title: String, data: ItemData, urlString: String) {
         super.init(nibName: nil, bundle: nil)
         self.title = title
@@ -67,6 +69,7 @@ final class SearchListViewController: UIViewController {
         listView.sortViews[3].button.addTarget(self, action: #selector(sortAscTapped), for: .touchUpInside)
     }
     
+    // 반복코드 처리방법 고민
     @objc func sortSimTapped() {
         guard var parameter else { return }
         parameter.sort = Sort.sim.rawValue
@@ -135,43 +138,52 @@ extension SearchListViewController: UICollectionViewDataSourcePrefetching {
     // indexpath가 count 갯수 - 10 일때 미리 불러오기
     func collectionView(_ collectionView: UICollectionView, prefetchItemsAt indexPaths: [IndexPath]) {
         
+        guard !isLoading else {
+            print("빠르게 스크롤, 두번호출")
+            return
+        }
+        
         /// 아이템이 2개씩 나오기 때문에 2번씩 불려질 때 있음,
-        /// 처음 30 추가할 때 어디서 추가할지 고민. 
-        guard let param = self.parameter else { return }
+        /// 처음 30 추가할 때 어디서 추가할지 고민.
         let lastItem = indexPaths.map { $0.item }.sorted(by: <).last
         print(indexPaths.map { $0.item }.sorted(by: <))
         print(lastItem)
         
         guard let lastItem else { return }
-        if lastItem >= list.count - 10 {
-            if list.count == 30 {
-                self.parameter?.start += 30
-            }
-            guard let url = networkManager.makeURL(from: NaverAPI.shopSearch(param)) else { return }
-            print(url)
-            networkManager.fetchData(url: url) { [weak self] (result: Result<ItemData, AFError>) in
-                guard let self else { return }
-                switch result {
-                case .success(let itemData):
-                    self.list.append(contentsOf: itemData.items)
-                    self.listView.collectionView.reloadData()
+        if list.count > 29, lastItem >= list.count - 10 {
+                if self.parameter?.start == 1 {
                     self.parameter?.start += 30
-                    self.urlString = url.absoluteString
-                case .failure(let error):
-                    print("데이터 불러오기 실패: \(error.localizedDescription)")
+                }
+                guard let param = self.parameter else { return }
+                
+                isLoading = true // 중복호출 방지
+                
+                guard let url = networkManager.makeURL(from: NaverAPI.shopSearch(param)) else { return }
+                print(url)
+                networkManager.fetchData(url: url) { [weak self] (result: Result<ItemData, AFError>) in
+                    guard let self else { return }
+                    switch result {
+                    case .success(let itemData):
+                        self.list.append(contentsOf: itemData.items)
+                        self.listView.collectionView.reloadData()
+                        self.parameter?.start += 30
+                        self.urlString = url.absoluteString
+                        isLoading = false
+                    case .failure(let error):
+                        print("데이터 불러오기 실패: \(error.localizedDescription)")
+                    }
                 }
             }
-        }
+        
     }
 
         
     // 취소 , count 갯수가 일정 수 넘어갈 때
     func collectionView(_ collectionView: UICollectionView, cancelPrefetchingForItemsAt indexPaths: [IndexPath]) {
-        for indexPath in indexPaths {
-            if indexPath.item >= 300 {
-                parameter = nil
-                print("prefetch 종료")
-            }
+        guard let itemData else { return }
+        print(itemData.total, list.count)
+        if itemData.total <= list.count {
+            self.parameter = nil
         }
     }
 }
