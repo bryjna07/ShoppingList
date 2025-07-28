@@ -17,7 +17,7 @@ final class SearchListView: UIView {
         $0.font = .systemFont(ofSize: 14)
     }
     
-    private let sortViews = [SortButtonView(title: "정확도"), SortButtonView(title: "날짜순"), SortButtonView(title: "가격높은순"), SortButtonView(title: "가격낮은순"),]
+    let sortViews = [SortButtonView(type: Sort.sim), SortButtonView(type: Sort.date), SortButtonView(type: Sort.asc), SortButtonView(type: Sort.dsc),]
     
     private lazy var buttonStack = UIStackView().then {
         $0.axis = .horizontal

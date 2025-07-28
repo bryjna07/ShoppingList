@@ -14,10 +14,9 @@ final class NetworkManager {
     static let shared = NetworkManager()
     private init() {}
     
-    /// 검색 API 요청 메서드
-    func fetchSearchData<T: Codable>(searchTerm: String, completion: @escaping (Result<T, AFError>) -> Void) {
-        let url = "https://openapi.naver.com/v1/search/shop.json?query=\(searchTerm)&display=10"
-        
+    /// API 요청 메서드
+    func fetchData<T: Decodable>(url: URL, completion: @escaping (Result<T, AFError>) -> Void) {
+   
         let header: HTTPHeaders = [
             "X-Naver-Client-Id": APIKey.naverId,
             "X-Naver-Client-Secret": APIKey.naverSecret,
@@ -33,5 +32,14 @@ final class NetworkManager {
                 completion(.failure(error))
             }
         }
+    }
+    
+    func makeURL(from endpoint: Endpoint) -> URL? {
+        var components = URLComponents()
+        components.scheme = endpoint.scheme
+        components.host = endpoint.host
+        components.path = endpoint.path
+        components.queryItems = endpoint.queryItems
+        return components.url
     }
 }

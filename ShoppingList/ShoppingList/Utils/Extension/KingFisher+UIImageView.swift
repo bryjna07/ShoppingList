@@ -37,9 +37,11 @@ extension UIImageView {
         ) { result in
             switch result {
             case .success(let value):
-                print("Loaded: \(value.source.url?.absoluteString ?? "") (cache: \(value.cacheType)")
+                value
+//                print("Loaded: \(value.source.url?.absoluteString ?? "") (cache: \(value.cacheType)")
             case .failure(let error):
-                print("Load failed: \(error.localizedDescription)")
+                error
+//                print("Load failed: \(error.localizedDescription)")
             }
         }
     }

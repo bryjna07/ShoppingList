@@ -17,9 +17,9 @@ final class SortButtonView: UIView {
         $0.setTitleColor(.black, for: .selected)
     }
     
-    init(title: String) {
+    init(type: Sort) {
         super.init(frame: .zero)
-        button.setTitle(title, for: .normal)
+        button.setTitle(type.title, for: .normal)
         configureUI()
     }
     
