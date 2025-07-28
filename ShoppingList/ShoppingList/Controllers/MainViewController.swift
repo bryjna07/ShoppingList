@@ -42,7 +42,7 @@ extension MainViewController: UISearchBarDelegate {
         }
         
         /// 검색 메서드 실행
-        let parmeter = ShopSearchParameter(query: text, display: 100)
+        let parmeter = ShopSearchParameter(query: text, display: 30)
         let endPoint = NaverAPI.shopSearch(parmeter)
         let url = networkManager.makeURL(from: endPoint)
         guard let url else {

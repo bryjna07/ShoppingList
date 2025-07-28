@@ -43,6 +43,7 @@ enum NaverAPI: Endpoint {
                 URLQueryItem(name: "query", value: parameter.query),
                 URLQueryItem(name: "display", value: "\(parameter.display)"),
                 URLQueryItem(name: "sort", value: "\(parameter.sort)"),
+                URLQueryItem(name: "start", value: "\(parameter.start)"),
             ]
             return items
         }
@@ -50,9 +51,10 @@ enum NaverAPI: Endpoint {
 }
 
 struct ShopSearchParameter {
-    let query: String
-    let display: Int
+    var query: String
+    var display: Int = 30
     var sort: String = "sim"
+    var start: Int = 1
 }
 
 enum APIKey {

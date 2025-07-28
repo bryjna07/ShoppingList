@@ -26,13 +26,18 @@ final class SearchListViewController: UIViewController {
     
     private var list: [Item] = []
     
+    var parameter : ShopSearchParameter?
+    
     var urlString = ""
+    
+    var currentStart = 1
     
     init(title: String, data: ItemData, urlString: String) {
         super.init(nibName: nil, bundle: nil)
         self.title = title
         itemData = data
         list = data.items
+        self.parameter = ShopSearchParameter(query: title)
         self.urlString = urlString
     }
     
@@ -48,9 +53,11 @@ final class SearchListViewController: UIViewController {
         super.viewDidLoad()
         listView.collectionView.delegate = self
         listView.collectionView.dataSource = self
+        listView.collectionView.prefetchDataSource = self
         guard let itemData else { return }
         listView.resultCountLabel.text = itemData.totalString
         buttonActionSetup()
+        print(list.count)
     }
     
     func buttonActionSetup() {
@@ -61,33 +68,33 @@ final class SearchListViewController: UIViewController {
     }
     
     @objc func sortSimTapped() {
-        guard let title else { return }
-        let parmeter = ShopSearchParameter(query: title, display: 100, sort: Sort.sim.rawValue)
-        let endPoint = NaverAPI.shopSearch(parmeter)
+        guard var parameter else { return }
+        parameter.sort = Sort.sim.rawValue
+        let endPoint = NaverAPI.shopSearch(parameter)
         let url = networkManager.makeURL(from: endPoint)
         makeList(url: url)
     }
     
     @objc func sortDateTapped() {
-        guard let title else { return }
-        let parmeter = ShopSearchParameter(query: title, display: 100, sort: Sort.date.rawValue)
-        let endPoint = NaverAPI.shopSearch(parmeter)
+        guard var parameter else { return }
+        parameter.sort = Sort.date.rawValue
+        let endPoint = NaverAPI.shopSearch(parameter)
         let url = networkManager.makeURL(from: endPoint)
         makeList(url: url)
     }
     
     @objc func sortDscTapped() {
-        guard let title else { return }
-        let parmeter = ShopSearchParameter(query: title, display: 100, sort: Sort.dsc.rawValue)
-        let endPoint = NaverAPI.shopSearch(parmeter)
+        guard var parameter else { return }
+        parameter.sort = Sort.dsc.rawValue
+        let endPoint = NaverAPI.shopSearch(parameter)
         let url = networkManager.makeURL(from: endPoint)
         makeList(url: url)
     }
     
     @objc func sortAscTapped() {
-        guard let title else { return }
-        let parmeter = ShopSearchParameter(query: title, display: 100, sort: Sort.asc.rawValue)
-        let endPoint = NaverAPI.shopSearch(parmeter)
+        guard var parameter else { return }
+        parameter.sort = Sort.asc.rawValue
+        let endPoint = NaverAPI.shopSearch(parameter)
         let url = networkManager.makeURL(from: endPoint)
         makeList(url: url)
     }
@@ -120,5 +127,51 @@ extension SearchListViewController: UICollectionViewDelegate, UICollectionViewDa
         guard let cell = listView.collectionView.dequeueReusableCell(withReuseIdentifier: ItemCell.id, for: indexPath) as? ItemCell else { return UICollectionViewCell() }
         cell.item = list[indexPath.row]
         return cell
+    }
+}
+
+extension SearchListViewController: UICollectionViewDataSourcePrefetching {
+    
+    // indexpath가 count 갯수 - 10 일때 미리 불러오기
+    func collectionView(_ collectionView: UICollectionView, prefetchItemsAt indexPaths: [IndexPath]) {
+        
+        /// 아이템이 2개씩 나오기 때문에 2번씩 불려질 때 있음,
+        /// 처음 30 추가할 때 어디서 추가할지 고민. 
+        guard let param = self.parameter else { return }
+        let lastItem = indexPaths.map { $0.item }.sorted(by: <).last
+        print(indexPaths.map { $0.item }.sorted(by: <))
+        print(lastItem)
+        
+        guard let lastItem else { return }
+        if lastItem >= list.count - 10 {
+            if list.count == 30 {
+                self.parameter?.start += 30
+            }
+            guard let url = networkManager.makeURL(from: NaverAPI.shopSearch(param)) else { return }
+            print(url)
+            networkManager.fetchData(url: url) { [weak self] (result: Result<ItemData, AFError>) in
+                guard let self else { return }
+                switch result {
+                case .success(let itemData):
+                    self.list.append(contentsOf: itemData.items)
+                    self.listView.collectionView.reloadData()
+                    self.parameter?.start += 30
+                    self.urlString = url.absoluteString
+                case .failure(let error):
+                    print("데이터 불러오기 실패: \(error.localizedDescription)")
+                }
+            }
+        }
+    }
+
+        
+    // 취소 , count 갯수가 일정 수 넘어갈 때
+    func collectionView(_ collectionView: UICollectionView, cancelPrefetchingForItemsAt indexPaths: [IndexPath]) {
+        for indexPath in indexPaths {
+            if indexPath.item >= 300 {
+                parameter = nil
+                print("prefetch 종료")
+            }
+        }
     }
 }
