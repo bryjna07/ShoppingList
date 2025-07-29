@@ -9,7 +9,7 @@ import UIKit
 import SnapKit
 import Then
 
-final class SearchListView: UIView {
+final class SearchListView: BaseView {
     
     ///Mark: - SearchListView Property
     let resultCountLabel = UILabel().then {
@@ -53,33 +53,23 @@ final class SearchListView: UIView {
         $0.register(horizontalCell.self, forCellWithReuseIdentifier: horizontalCell.id)
         $0.backgroundColor = .black
     }
-    
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        configureHierarachy()
-        configureLayout()
-        configureView()
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
 }
 
 ///Mark: - SearchListView AutoLayout
-extension SearchListView: ConfigureUI {
-    func configureHierarachy() {
+extension SearchListView {
+    override func configureHierarachy() {
         [
             resultCountLabel,
             buttonStack,
             collectionView,
-            horizontalCollectionView
+            horizontalCollectionView,
+            activityIndicatorView,
         ].forEach {
             addSubview($0)
         }
     }
     
-    func configureLayout() {
+    override func configureLayout() {
         
         horizontalCollectionView.snp.makeConstraints {
             $0.horizontalEdges.bottom.equalTo(safeAreaLayoutGuide)
@@ -100,9 +90,14 @@ extension SearchListView: ConfigureUI {
             $0.top.equalTo(buttonStack.snp.bottom).offset(8)
             $0.horizontalEdges.bottom.equalTo(safeAreaLayoutGuide)
         }
+        
+        activityIndicatorView.snp.makeConstraints {
+            $0.horizontalEdges.equalTo(self.safeAreaLayoutGuide)
+            $0.verticalEdges.equalTo(safeAreaLayoutGuide).inset(100)
+        }
     }
     
-    func configureView() {
-        backgroundColor = .black
+    override func configureView() {
+        super.configureView()
     }
 }

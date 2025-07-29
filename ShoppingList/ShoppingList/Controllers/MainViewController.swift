@@ -41,6 +41,8 @@ extension MainViewController: UISearchBarDelegate {
             return
         }
         
+        mainView.activityIndicatorView.startAnimating()
+        
         /// 검색 메서드 실행
         let parmeter = ShopSearchParameter(query: text, display: 30)
         let endPoint = NaverAPI.shopSearch(parmeter)
@@ -58,7 +60,7 @@ extension MainViewController: UISearchBarDelegate {
             switch result {
             case .success(let itemData):
                 self.itemData = itemData
-                let vc = SearchListViewController(title: text, data: itemData, urlString: url.absoluteString)
+                mainView.activityIndicatorView.stopAnimating()
                 navigationController?.pushViewController(vc, animated: true)
             case .failure(let error):
                 print(error)

@@ -72,6 +72,7 @@ final class SearchListViewController: UIViewController {
     }
     
     private func makeHorizontalList() {
+        listView.activityIndicatorView.startAnimating()
         let param = ShopSearchParameter(query: "아이폰")
         let endPoint = NaverAPI.shopSearch(param)
         let url = networkManager.makeURL(from: endPoint)
@@ -81,6 +82,7 @@ final class SearchListViewController: UIViewController {
             switch result {
             case .success(let itemData):
                 self.horizontalList = itemData.items
+                listView.activityIndicatorView.stopAnimating()
                 self.listView.horizontalCollectionView.reloadData()
             case .failure(let error):
                 print("데이터 불러오기 실패: \(error.localizedDescription)")
@@ -139,12 +141,14 @@ final class SearchListViewController: UIViewController {
             print("중복방지")
             return
         }
+        listView.activityIndicatorView.startAnimating()
         networkManager.fetchData(url: url) { [weak self] (result: Result<ItemData, AFError>) in
             guard let self else { return }
             switch result {
             case .success(let itemData):
                 self.itemData = itemData
                 urlString = url.absoluteString
+                listView.activityIndicatorView.stopAnimating()
             case .failure(let error):
                 print("데이터 불러오기 실패: \(error.localizedDescription)")
             }

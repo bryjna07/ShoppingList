@@ -9,7 +9,7 @@ import UIKit
 import SnapKit
 import Then
 
-final class MainView: UIView {
+final class MainView: BaseView {
     
     ///Mark: - MainView Property
     let searchBar = UISearchBar().then {
@@ -22,38 +22,32 @@ final class MainView: UIView {
         $0.searchTextField.font = .systemFont(ofSize: 18)
         $0.searchTextField.textColor = .white // 입력 색상
     }
-    
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        configureHierarachy()
-        configureLayout()
-        configureView()
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
 }
 
 ///Mark: - MainView AutoLayout
-extension MainView: ConfigureUI {
-    func configureHierarachy() {
+extension MainView {
+    override func configureHierarachy() {
         [
             searchBar,
-            
+            activityIndicatorView
         ].forEach {
             addSubview($0)
         }
     }
     
-    func configureLayout() {
+    override func configureLayout() {
         searchBar.snp.makeConstraints {
             $0.top.horizontalEdges.equalTo(safeAreaLayoutGuide).inset(16)
             $0.height.equalTo(44)
         }
+        
+        activityIndicatorView.snp.makeConstraints {
+            $0.top.equalTo(searchBar.snp.bottom)
+            $0.horizontalEdges.bottom.equalTo(self.safeAreaLayoutGuide)
+           }
     }
     
-    func configureView() {
-        backgroundColor = .black
+    override func configureView() {
+        super.configureView()
     } 
 }
