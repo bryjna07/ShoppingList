@@ -61,7 +61,13 @@ extension MainViewController: UISearchBarDelegate {
             case .success(let itemData):
                 self.itemData = itemData
                 mainView.activityIndicatorView.stopAnimating()
-                navigationController?.pushViewController(vc, animated: true)
+                if itemData.total == 0 {
+                    self.showAlert(title: "검색결과 없음", message: "다른 검색어로 이용해보세요")
+                    self.mainView.searchBar.text = ""
+                } else {
+                    let vc = SearchListViewController(title: text, data: itemData, urlString: url.absoluteString)
+                    navigationController?.pushViewController(vc, animated: true)
+                }
             case .failure(let error):
                 print(error)
             }
