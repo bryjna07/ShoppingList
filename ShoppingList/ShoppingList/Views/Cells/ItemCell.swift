@@ -10,7 +10,7 @@ import SnapKit
 import Then
 import Kingfisher
 
-final class ItemCell: UICollectionViewCell {
+final class ItemCell: BaseCollectionViewCell {
     
     static let id = "ItemCell"
     
@@ -51,26 +51,15 @@ final class ItemCell: UICollectionViewCell {
         $0.textColor = .white
     }
     
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        configureHierarachy()
-        configureLayout()
-        configureView()
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
     override func prepareForReuse() {
         super.prepareForReuse()
         imageView.image = nil
     }
 }
 
-extension ItemCell: ConfigureUI {
+extension ItemCell {
     
-    func configureUIWithData() {
+    override func configureUIWithData() {
         guard let item else { return } // 예외처리
         mallLabel.text = item.mallName
         titleLabel.text = item.titleForUI
@@ -79,7 +68,7 @@ extension ItemCell: ConfigureUI {
         imageView.setKFImage(from: url)
     }
     
-    func configureHierarachy() {
+    override func configureHierarachy() {
         imageView.addSubview(likeButton)
         [
             imageView,
@@ -91,7 +80,7 @@ extension ItemCell: ConfigureUI {
         }
     }
     
-    func configureLayout() {
+    override func configureLayout() {
         imageView.snp.makeConstraints {
             $0.top.equalToSuperview()
             $0.horizontalEdges.equalToSuperview()
@@ -120,7 +109,7 @@ extension ItemCell: ConfigureUI {
         }
     }
     
-    func configureView() {
-        backgroundColor = .clear
+    override func configureView() {
+        super.configureView()
     }
 }

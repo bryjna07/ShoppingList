@@ -42,6 +42,18 @@ final class SearchListView: UIView {
         $0.backgroundColor = .black
     }
     
+    private let secondLayout = UICollectionViewFlowLayout().then {
+        $0.scrollDirection = .horizontal
+        $0.minimumLineSpacing = 2
+        let width = (UIScreen.main.bounds.width - 8) / 5
+        $0.itemSize = CGSize(width: width, height: 100)
+    }
+    
+    lazy var horizontalCollectionView = UICollectionView(frame: .zero, collectionViewLayout: secondLayout).then {
+        $0.register(horizontalCell.self, forCellWithReuseIdentifier: horizontalCell.id)
+        $0.backgroundColor = .black
+    }
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
         configureHierarachy()
@@ -61,12 +73,19 @@ extension SearchListView: ConfigureUI {
             resultCountLabel,
             buttonStack,
             collectionView,
+            horizontalCollectionView
         ].forEach {
             addSubview($0)
         }
     }
     
     func configureLayout() {
+        
+        horizontalCollectionView.snp.makeConstraints {
+            $0.horizontalEdges.bottom.equalTo(safeAreaLayoutGuide)
+            $0.height.equalTo(100)
+        }
+        
         resultCountLabel.snp.makeConstraints {
             $0.top.horizontalEdges.equalTo(safeAreaLayoutGuide).inset(16)
         }

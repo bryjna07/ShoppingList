@@ -26,13 +26,15 @@ final class SearchListViewController: UIViewController {
     
     private var list: [Item] = []
     
-    var parameter : ShopSearchParameter?
+    private var horizontalList: [Item] = []
     
-    var urlString = ""
+    private var parameter : ShopSearchParameter?
     
-    var currentStart = 1
+    private var urlString = ""
     
-    var isLoading = false
+    private var currentStart = 1
+    
+    private var isLoading = false
     
     init(title: String, data: ItemData, urlString: String) {
         super.init(nibName: nil, bundle: nil)
@@ -53,16 +55,46 @@ final class SearchListViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        listView.collectionView.delegate = self
-        listView.collectionView.dataSource = self
-        listView.collectionView.prefetchDataSource = self
+        setupCollectionView()
         guard let itemData else { return }
         listView.resultCountLabel.text = itemData.totalString
         buttonActionSetup()
-        print(list.count)
+        makeHorizontalList()
     }
     
-    func buttonActionSetup() {
+    private func setupCollectionView() {
+        listView.collectionView.delegate = self
+        listView.collectionView.dataSource = self
+        listView.collectionView.prefetchDataSource = self
+        
+        listView.horizontalCollectionView.delegate = self
+        listView.horizontalCollectionView.dataSource = self
+    }
+    
+    private func makeHorizontalList() {
+        let param = ShopSearchParameter(query: "아이폰")
+        let endPoint = NaverAPI.shopSearch(param)
+        let url = networkManager.makeURL(from: endPoint)
+        guard let url else { return }
+        networkManager.fetchData(url: url) { [weak self] (result: Result<ItemData, AFError>) in
+            guard let self else { return }
+            switch result {
+            case .success(let itemData):
+                self.horizontalList = itemData.items
+                self.listView.horizontalCollectionView.reloadData()
+            case .failure(let error):
+                print("데이터 불러오기 실패: \(error.localizedDescription)")
+            }
+        } naverError:  { [weak self] message in
+            if message.errorCode == "SE99" {
+                self?.view.makeToast("서버오류", position: .top) /// 재요청 or 에러뷰(네트워크 오류안내)
+            } else {
+                self?.view.makeToast(message.errorMessage, position: .top) /// 에러응답 테스트용
+            }
+        }
+    }
+    
+    private func buttonActionSetup() {
         listView.sortViews[0].button.addTarget(self, action: #selector(sortSimTapped), for: .touchUpInside)
         listView.sortViews[1].button.addTarget(self, action: #selector(sortDateTapped), for: .touchUpInside)
         listView.sortViews[2].button.addTarget(self, action: #selector(sortDscTapped), for: .touchUpInside)
@@ -70,7 +102,7 @@ final class SearchListViewController: UIViewController {
     }
     
     // 반복코드 처리방법 고민
-    @objc func sortSimTapped() {
+    @objc private func sortSimTapped() {
         guard var parameter else { return }
         parameter.sort = Sort.sim.rawValue
         let endPoint = NaverAPI.shopSearch(parameter)
@@ -78,7 +110,7 @@ final class SearchListViewController: UIViewController {
         makeList(url: url)
     }
     
-    @objc func sortDateTapped() {
+    @objc private func sortDateTapped() {
         guard var parameter else { return }
         parameter.sort = Sort.date.rawValue
         let endPoint = NaverAPI.shopSearch(parameter)
@@ -86,7 +118,7 @@ final class SearchListViewController: UIViewController {
         makeList(url: url)
     }
     
-    @objc func sortDscTapped() {
+    @objc private func sortDscTapped() {
         guard var parameter else { return }
         parameter.sort = Sort.dsc.rawValue
         let endPoint = NaverAPI.shopSearch(parameter)
@@ -94,7 +126,7 @@ final class SearchListViewController: UIViewController {
         makeList(url: url)
     }
     
-    @objc func sortAscTapped() {
+    @objc private func sortAscTapped() {
         guard var parameter else { return }
         parameter.sort = Sort.asc.rawValue
         let endPoint = NaverAPI.shopSearch(parameter)
@@ -102,7 +134,7 @@ final class SearchListViewController: UIViewController {
         makeList(url: url)
     }
     
-    func makeList(url: URL?) {
+    private func makeList(url: URL?) {
         guard let url, urlString != url.absoluteString else {
             print("중복방지")
             return
@@ -129,13 +161,27 @@ final class SearchListViewController: UIViewController {
 ///Mark: - CollectionView Protocols
 extension SearchListViewController: UICollectionViewDelegate, UICollectionViewDataSource {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return list.count
+        if collectionView == listView.collectionView {
+            return list.count
+        } else if collectionView == listView.horizontalCollectionView {
+            return horizontalList.count
+        } else {
+            return 0
+        }
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        guard let cell = listView.collectionView.dequeueReusableCell(withReuseIdentifier: ItemCell.id, for: indexPath) as? ItemCell else { return UICollectionViewCell() }
-        cell.item = list[indexPath.row]
-        return cell
+        if collectionView == listView.collectionView {
+            guard let cell = listView.collectionView.dequeueReusableCell(withReuseIdentifier: ItemCell.id, for: indexPath) as? ItemCell else { return UICollectionViewCell() }
+            cell.item = list[indexPath.row]
+            return cell
+        } else if collectionView == listView.horizontalCollectionView {
+            guard let cell = listView.horizontalCollectionView.dequeueReusableCell(withReuseIdentifier: horizontalCell.id, for: indexPath) as? horizontalCell else { return UICollectionViewCell() }
+            cell.item = horizontalList[indexPath.row]
+            return cell
+        } else {
+            return UICollectionViewCell()
+        }
     }
 }
 
@@ -143,46 +189,47 @@ extension SearchListViewController: UICollectionViewDataSourcePrefetching {
     
     // indexpath가 count 갯수 - 10 일때 미리 불러오기
     func collectionView(_ collectionView: UICollectionView, prefetchItemsAt indexPaths: [IndexPath]) {
-        
-        guard !isLoading else {
-            print("빠르게 스크롤, 두번호출")
-            return
-        }
-        
-        /// 아이템이 2개씩 나오기 때문에 2번씩 불려질 때 있음,
-        /// 처음 30 추가할 때 어디서 추가할지 고민.
-        let lastItem = indexPaths.map { $0.item }.sorted(by: <).last
-        print(indexPaths.map { $0.item }.sorted(by: <))
-        print(lastItem)
-        
-        guard let lastItem else { return }
-        if list.count > 29, lastItem >= list.count - 10 {
-            if self.parameter?.start == 1 {
-                self.parameter?.start += 30
+        if collectionView == listView.collectionView {
+            guard !isLoading else {
+                print("빠르게 스크롤, 두번호출")
+                return
             }
-            guard let param = self.parameter else { return }
             
-            isLoading = true // 중복호출 방지
+            /// 아이템이 2개씩 나오기 때문에 2번씩 불려질 때 있음,
+            /// 처음 30 추가할 때 어디서 추가할지 고민.
+            let lastItem = indexPaths.map { $0.item }.sorted(by: <).last
+            print(indexPaths.map { $0.item }.sorted(by: <))
+            print(lastItem)
             
-            guard let url = networkManager.makeURL(from: NaverAPI.shopSearch(param)) else { return }
-            print(url)
-            networkManager.fetchData(url: url) { [weak self] (result: Result<ItemData, AFError>) in
-                guard let self else { return }
-                switch result {
-                case .success(let itemData):
-                    self.list.append(contentsOf: itemData.items)
-                    self.listView.collectionView.reloadData()
+            guard let lastItem else { return }
+            if list.count > 29, lastItem >= list.count - 10 {
+                if self.parameter?.start == 1 {
                     self.parameter?.start += 30
-                    self.urlString = url.absoluteString
-                    isLoading = false
-                case .failure(let error):
-                    print("데이터 불러오기 실패: \(error.localizedDescription)")
                 }
-            } naverError: { [weak self] message in
-                if message.errorCode == "SE99" {
-                    self?.view.makeToast("서버오류", position: .top) /// 재요청 or 에러뷰(네트워크 오류안내)
-                } else {
-                    self?.view.makeToast(message.errorMessage, position: .top) /// 에러응답 테스트용
+                guard let param = self.parameter else { return }
+                
+                isLoading = true // 중복호출 방지
+                
+                guard let url = networkManager.makeURL(from: NaverAPI.shopSearch(param)) else { return }
+                print(url)
+                networkManager.fetchData(url: url) { [weak self] (result: Result<ItemData, AFError>) in
+                    guard let self else { return }
+                    switch result {
+                    case .success(let itemData):
+                        self.list.append(contentsOf: itemData.items)
+                        self.listView.collectionView.reloadData()
+                        self.parameter?.start += 30
+                        self.urlString = url.absoluteString
+                        isLoading = false
+                    case .failure(let error):
+                        print("데이터 불러오기 실패: \(error.localizedDescription)")
+                    }
+                } naverError: { [weak self] message in
+                    if message.errorCode == "SE99" {
+                        self?.view.makeToast("서버오류", position: .top) /// 재요청 or 에러뷰(네트워크 오류안내)
+                    } else {
+                        self?.view.makeToast(message.errorMessage, position: .top) /// 에러응답 테스트용
+                    }
                 }
             }
         }
@@ -192,10 +239,12 @@ extension SearchListViewController: UICollectionViewDataSourcePrefetching {
     
     // 취소 , count 갯수가 일정 수 넘어갈 때
     func collectionView(_ collectionView: UICollectionView, cancelPrefetchingForItemsAt indexPaths: [IndexPath]) {
-        guard let itemData else { return }
-        print(itemData.total, list.count)
-        if itemData.total <= list.count {
-            self.parameter = nil
+        if collectionView == listView.collectionView {
+            guard let itemData else { return }
+            print(itemData.total, list.count)
+            if itemData.total <= list.count {
+                self.parameter = nil
+            }
         }
     }
 }
