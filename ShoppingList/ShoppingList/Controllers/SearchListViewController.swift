@@ -149,6 +149,7 @@ final class SearchListViewController: UIViewController {
                 self.itemData = itemData
                 urlString = url.absoluteString
                 listView.activityIndicatorView.stopAnimating()
+                listView.collectionView.scrollToItem(at: IndexPath(item: 0, section: 0), at: .top, animated: false)
             case .failure(let error):
                 print("데이터 불러오기 실패: \(error.localizedDescription)")
             }
