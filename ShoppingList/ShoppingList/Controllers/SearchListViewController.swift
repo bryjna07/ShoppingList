@@ -116,6 +116,12 @@ final class SearchListViewController: UIViewController {
             case .failure(let error):
                 print("데이터 불러오기 실패: \(error.localizedDescription)")
             }
+        } naverError: { [weak self] message in
+            if message.errorCode == "SE99" {
+                self?.view.makeToast("서버오류", position: .top) /// 재요청 or 에러뷰(네트워크 오류안내)
+            } else {
+                self?.view.makeToast(message.errorMessage, position: .top) /// 에러응답 테스트용
+            }
         }
     }
 }
@@ -151,33 +157,39 @@ extension SearchListViewController: UICollectionViewDataSourcePrefetching {
         
         guard let lastItem else { return }
         if list.count > 29, lastItem >= list.count - 10 {
-                if self.parameter?.start == 1 {
+            if self.parameter?.start == 1 {
+                self.parameter?.start += 30
+            }
+            guard let param = self.parameter else { return }
+            
+            isLoading = true // 중복호출 방지
+            
+            guard let url = networkManager.makeURL(from: NaverAPI.shopSearch(param)) else { return }
+            print(url)
+            networkManager.fetchData(url: url) { [weak self] (result: Result<ItemData, AFError>) in
+                guard let self else { return }
+                switch result {
+                case .success(let itemData):
+                    self.list.append(contentsOf: itemData.items)
+                    self.listView.collectionView.reloadData()
                     self.parameter?.start += 30
+                    self.urlString = url.absoluteString
+                    isLoading = false
+                case .failure(let error):
+                    print("데이터 불러오기 실패: \(error.localizedDescription)")
                 }
-                guard let param = self.parameter else { return }
-                
-                isLoading = true // 중복호출 방지
-                
-                guard let url = networkManager.makeURL(from: NaverAPI.shopSearch(param)) else { return }
-                print(url)
-                networkManager.fetchData(url: url) { [weak self] (result: Result<ItemData, AFError>) in
-                    guard let self else { return }
-                    switch result {
-                    case .success(let itemData):
-                        self.list.append(contentsOf: itemData.items)
-                        self.listView.collectionView.reloadData()
-                        self.parameter?.start += 30
-                        self.urlString = url.absoluteString
-                        isLoading = false
-                    case .failure(let error):
-                        print("데이터 불러오기 실패: \(error.localizedDescription)")
-                    }
+            } naverError: { [weak self] message in
+                if message.errorCode == "SE99" {
+                    self?.view.makeToast("서버오류", position: .top) /// 재요청 or 에러뷰(네트워크 오류안내)
+                } else {
+                    self?.view.makeToast(message.errorMessage, position: .top) /// 에러응답 테스트용
                 }
             }
+        }
         
     }
-
-        
+    
+    
     // 취소 , count 갯수가 일정 수 넘어갈 때
     func collectionView(_ collectionView: UICollectionView, cancelPrefetchingForItemsAt indexPaths: [IndexPath]) {
         guard let itemData else { return }

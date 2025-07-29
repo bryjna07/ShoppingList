@@ -45,6 +45,9 @@ extension MainViewController: UISearchBarDelegate {
         let parmeter = ShopSearchParameter(query: text, display: 30)
         let endPoint = NaverAPI.shopSearch(parmeter)
         let url = networkManager.makeURL(from: endPoint)
+        
+        /// 네이버 에러응답 테스트 URL
+        //        let url = URL(string: "https://openapi.naver.com/v1/search/shop.json?query=마우스&display=10&sort=si")
         guard let url else {
             view.makeToast("준비중입니다", position: .top)
             return
@@ -58,7 +61,13 @@ extension MainViewController: UISearchBarDelegate {
                 let vc = SearchListViewController(title: text, data: itemData, urlString: url.absoluteString)
                 navigationController?.pushViewController(vc, animated: true)
             case .failure(let error):
-                print("데이터 불러오기 실패: \(error.localizedDescription)")
+                print(error)
+            }
+        } naverError: { [weak self] message in
+            if message.errorCode == "SE99" {
+                self?.view.makeToast("서버오류", position: .top) /// 재요청 or 에러뷰(네트워크 오류안내)
+            } else {
+                self?.view.makeToast(message.errorMessage, position: .top) /// 에러응답 테스트용
             }
         }
     }
