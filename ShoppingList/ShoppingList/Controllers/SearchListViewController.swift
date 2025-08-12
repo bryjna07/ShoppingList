@@ -14,22 +14,6 @@ final class SearchListViewController: UIViewController {
     private let listView = SearchListView()
     private var viewModel: SearchListViewModel
     
-//    private var itemData: ItemData? {
-//        didSet {
-//            guard let itemData else { return }
-//            list = itemData.items
-//            listView.collectionView.reloadData()
-//        }
-//    }
-    
-//    private var list: [Item] = []
-//    private var horizontalList: [Item] = []
-//    private var parameter : ShopSearchParameter?
-//    private var urlString = ""
-//    private var currentStart = 1
-//    private var prefetchNumber = 0
-//    private var isLoading = false
-    
     init(viewModel: SearchListViewModel) {
         self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
@@ -46,20 +30,32 @@ final class SearchListViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupCollectionView()
-//        guard let itemData else { return }
-//        listView.resultCountLabel.text = itemData.totalString
         binding()
-//        buttonActionSetup()
+        buttonActionSetup()
 //        makeHorizontalList()
     }
     
     private func binding() {
+        
+        viewModel.outputTitle.bind { [weak self] title in
+            self?.navigationItem.title = title
+        }
+        
         viewModel.outputTotalString.bind { [weak self] string in
             self?.listView.resultCountLabel.text = string
         }
         
-        viewModel.outputItemList.lazyBind { [weak self] _ in
+        viewModel.outputItemList.lazyBind { [weak self] list in
+            print("lazy bind")
             self?.listView.collectionView.reloadData()
+        }
+        
+        viewModel.outputIndicatorStatus.lazyBind { [weak self] bool in
+            bool ? self?.listView.activityIndicatorView.startAnimating() : self?.listView.activityIndicatorView.stopAnimating()
+        }
+        
+        viewModel.outputScrollToItem.lazyBind { [weak self] _ in
+            self?.listView.collectionView.scrollToItem(at: IndexPath(item: 0, section: 0), at: .top, animated: false)
         }
     }
     
@@ -91,65 +87,29 @@ final class SearchListViewController: UIViewController {
 //        }
 //    }
     
-//    private func buttonActionSetup() {
-//        listView.sortViews[0].button.addTarget(self, action: #selector(sortSimTapped), for: .touchUpInside)
-//        listView.sortViews[1].button.addTarget(self, action: #selector(sortDateTapped), for: .touchUpInside)
-//        listView.sortViews[2].button.addTarget(self, action: #selector(sortDscTapped), for: .touchUpInside)
-//        listView.sortViews[3].button.addTarget(self, action: #selector(sortAscTapped), for: .touchUpInside)
-//    }
+    private func buttonActionSetup() {
+        listView.sortViews[0].button.addTarget(self, action: #selector(sortSimTapped), for: .touchUpInside)
+        listView.sortViews[1].button.addTarget(self, action: #selector(sortDateTapped), for: .touchUpInside)
+        listView.sortViews[2].button.addTarget(self, action: #selector(sortAscTapped), for: .touchUpInside)
+        listView.sortViews[3].button.addTarget(self, action: #selector(sortDscTapped), for: .touchUpInside)
+    }
     
-//    // 반복코드 처리방법 고민
-//    @objc private func sortSimTapped() {
-//        guard var parameter else { return }
-//        parameter.sort = Sort.sim.rawValue
-//        let endPoint = NaverAPI.shopSearch(parameter)
-//        let url = networkManager.makeURL(from: endPoint)
-//        makeList(url: url)
-//    }
-//    
-//    @objc private func sortDateTapped() {
-//        guard var parameter else { return }
-//        parameter.sort = Sort.date.rawValue
-//        let endPoint = NaverAPI.shopSearch(parameter)
-//        let url = networkManager.makeURL(from: endPoint)
-//        makeList(url: url)
-//    }
-//    
-//    @objc private func sortDscTapped() {
-//        guard var parameter else { return }
-//        parameter.sort = Sort.dsc.rawValue
-//        let endPoint = NaverAPI.shopSearch(parameter)
-//        let url = networkManager.makeURL(from: endPoint)
-//        makeList(url: url)
-//    }
-//    
-//    @objc private func sortAscTapped() {
-//        guard var parameter else { return }
-//        parameter.sort = Sort.asc.rawValue
-//        let endPoint = NaverAPI.shopSearch(parameter)
-//        let url = networkManager.makeURL(from: endPoint)
-//        makeList(url: url)
-//    }
-//    
-//    private func makeList(url: URL?) {
-//        guard let url, urlString != url.absoluteString else {
-//            print("중복방지")
-//            return
-//        }
-//        listView.activityIndicatorView.startAnimating()
-//        networkManager.fetchData(url: url) { [weak self] (result: Result<ItemData, CustomError>) in
-//            guard let self else { return }
-//            switch result {
-//            case .success(let itemData):
-//                self.itemData = itemData
-//                urlString = url.absoluteString
-//                listView.activityIndicatorView.stopAnimating()
-//                listView.collectionView.scrollToItem(at: IndexPath(item: 0, section: 0), at: .top, animated: false)
-//            case .failure(let error):
-//                print("데이터 불러오기 실패: \(error.localizedDescription)")
-//            }
-//        }
-//    }
+    @objc private func sortSimTapped() {
+        viewModel.inputSimButtonTapped.value = ()
+    }
+    
+    @objc private func sortDateTapped() {
+        viewModel.inputDateButtonTapped.value = ()
+    }
+    
+    @objc private func sortAscTapped() {
+        viewModel.inputAscButtonTapped.value = ()
+    }
+    
+    @objc private func sortDscTapped() {
+        viewModel.inputDscButtonTapped.value = ()
+    }
+    
 }
 
 ///Mark: - CollectionView Protocols

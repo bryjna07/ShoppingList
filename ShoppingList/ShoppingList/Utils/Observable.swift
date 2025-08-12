@@ -11,7 +11,6 @@ final class Observable<T> {
     
     var value: T {
         didSet {
-            print("didSet", oldValue, value)
             closure?(value)
         }
     }
@@ -20,7 +19,6 @@ final class Observable<T> {
     
     init(_ value: T) {
         self.value = value
-        print("Obsevable Init")
     }
     
     func bind(closure: @escaping (T) -> Void) {
