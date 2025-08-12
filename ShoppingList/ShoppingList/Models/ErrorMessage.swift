@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct ErrorMessage: Error, Decodable {
+struct NaverError: Error, Decodable {
     let errorMessage: String
     let errorCode: String
 }

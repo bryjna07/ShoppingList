@@ -7,6 +7,7 @@
 
 import UIKit
 import Alamofire
+import Toast
 
 final class SearchListViewController: UIViewController {
     
@@ -33,6 +34,8 @@ final class SearchListViewController: UIViewController {
     private var urlString = ""
     
     private var currentStart = 1
+    
+    private var prefetchNumber = 0
     
     private var isLoading = false
     
@@ -77,7 +80,7 @@ final class SearchListViewController: UIViewController {
         let endPoint = NaverAPI.shopSearch(param)
         let url = networkManager.makeURL(from: endPoint)
         guard let url else { return }
-        networkManager.fetchData(url: url) { [weak self] (result: Result<ItemData, AFError>) in
+        networkManager.fetchData(url: url) { [weak self] (result: Result<ItemData, CustomError>) in
             guard let self else { return }
             switch result {
             case .success(let itemData):
@@ -86,12 +89,6 @@ final class SearchListViewController: UIViewController {
                 self.listView.horizontalCollectionView.reloadData()
             case .failure(let error):
                 print("데이터 불러오기 실패: \(error.localizedDescription)")
-            }
-        } naverError:  { [weak self] message in
-            if message.errorCode == "SE99" {
-                self?.view.makeToast("서버오류", position: .top) /// 재요청 or 에러뷰(네트워크 오류안내)
-            } else {
-                self?.view.makeToast(message.errorMessage, position: .top) /// 에러응답 테스트용
             }
         }
     }
@@ -142,7 +139,7 @@ final class SearchListViewController: UIViewController {
             return
         }
         listView.activityIndicatorView.startAnimating()
-        networkManager.fetchData(url: url) { [weak self] (result: Result<ItemData, AFError>) in
+        networkManager.fetchData(url: url) { [weak self] (result: Result<ItemData, CustomError>) in
             guard let self else { return }
             switch result {
             case .success(let itemData):
@@ -152,12 +149,6 @@ final class SearchListViewController: UIViewController {
                 listView.collectionView.scrollToItem(at: IndexPath(item: 0, section: 0), at: .top, animated: false)
             case .failure(let error):
                 print("데이터 불러오기 실패: \(error.localizedDescription)")
-            }
-        } naverError: { [weak self] message in
-            if message.errorCode == "SE99" {
-                self?.view.makeToast("서버오류", position: .top) /// 재요청 or 에러뷰(네트워크 오류안내)
-            } else {
-                self?.view.makeToast(message.errorMessage, position: .top) /// 에러응답 테스트용
             }
         }
     }
@@ -196,15 +187,11 @@ extension SearchListViewController: UICollectionViewDataSourcePrefetching {
     func collectionView(_ collectionView: UICollectionView, prefetchItemsAt indexPaths: [IndexPath]) {
         if collectionView == listView.collectionView {
             guard !isLoading else {
-                print("빠르게 스크롤, 두번호출")
+                print("두번호출")
                 return
             }
-            
-            /// 아이템이 2개씩 나오기 때문에 2번씩 불려질 때 있음,
-            /// 처음 30 추가할 때 어디서 추가할지 고민.
+                
             let lastItem = indexPaths.map { $0.item }.sorted(by: <).last
-            print(indexPaths.map { $0.item }.sorted(by: <))
-            print(lastItem)
             
             guard let lastItem else { return }
             if list.count > 29, lastItem >= list.count - 10 {
@@ -217,7 +204,7 @@ extension SearchListViewController: UICollectionViewDataSourcePrefetching {
                 
                 guard let url = networkManager.makeURL(from: NaverAPI.shopSearch(param)) else { return }
                 print(url)
-                networkManager.fetchData(url: url) { [weak self] (result: Result<ItemData, AFError>) in
+                networkManager.fetchData(url: url) { [weak self] (result: Result<ItemData, CustomError>) in
                     guard let self else { return }
                     switch result {
                     case .success(let itemData):
@@ -226,14 +213,9 @@ extension SearchListViewController: UICollectionViewDataSourcePrefetching {
                         self.parameter?.start += 30
                         self.urlString = url.absoluteString
                         isLoading = false
+//                        prefetchNumber = itemNum
                     case .failure(let error):
                         print("데이터 불러오기 실패: \(error.localizedDescription)")
-                    }
-                } naverError: { [weak self] message in
-                    if message.errorCode == "SE99" {
-                        self?.view.makeToast("서버오류", position: .top) /// 재요청 or 에러뷰(네트워크 오류안내)
-                    } else {
-                        self?.view.makeToast(message.errorMessage, position: .top) /// 에러응답 테스트용
                     }
                 }
             }

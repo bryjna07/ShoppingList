@@ -55,7 +55,7 @@ extension MainViewController: UISearchBarDelegate {
             return
         }
         print(url.absoluteString)
-        networkManager.fetchData(url: url) { [weak self] (result: Result<ItemData, AFError>) in
+        networkManager.fetchData(url: url) { [weak self] (result: Result<ItemData, CustomError>) in
             guard let self else { return }
             switch result {
             case .success(let itemData):
@@ -70,12 +70,6 @@ extension MainViewController: UISearchBarDelegate {
                 }
             case .failure(let error):
                 print(error)
-            }
-        } naverError: { [weak self] message in
-            if message.errorCode == "SE99" {
-                self?.view.makeToast("서버오류", position: .top) /// 재요청 or 에러뷰(네트워크 오류안내)
-            } else {
-                self?.view.makeToast(message.errorMessage, position: .top) /// 에러응답 테스트용
             }
         }
     }

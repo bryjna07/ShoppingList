@@ -8,6 +8,11 @@
 import Foundation
 import Alamofire
 
+enum CustomError: Error {
+    case naverError(NaverError)
+    case afError(AFError?)
+}
+
 //MARK: - Networking
 final class NetworkManager {
     
@@ -15,7 +20,7 @@ final class NetworkManager {
     private init() {}
     
     /// API 요청 메서드
-    func fetchData<T: Decodable>(url: URL, completion: @escaping (Result<T, AFError>) -> Void, naverError: @escaping (ErrorMessage) -> Void) {
+    func fetchData<T: Decodable>(url: URL, completion: @escaping (Result<T, CustomError>) -> Void) {
         
         let header: HTTPHeaders = [
             "X-Naver-Client-Id": APIKey.naverId,
@@ -24,32 +29,34 @@ final class NetworkManager {
         
         AF.request(url, method: .get, headers: header)
             .validate(statusCode: 200..<500)
-            .responseDecodable(of: T.self) { response in
-                switch response.result {
-                case .success(let data):
-                    completion(.success(data))
-                case .failure(let error):
-                    if let errorResponse = response.data,
-                       let errorData = try? JSONDecoder().decode(ErrorMessage.self, from: errorResponse), let customError = NaverErrorCode(rawValue: errorData.errorCode) {
-                        switch customError {
+            .responseData{ data in
+                switch data.data {
+                case .some(let data):
+                    if let naverError = data.transformNaverError {
+                        let errorCode = NaverErrorCode(rawValue: naverError.errorCode)
+                        switch errorCode {
                         case .se01:
-                            dump(errorData)
+                            dump(naverError)
                         case .se02:
-                            dump(errorData)
+                            dump(naverError)
                         case .se03:
-                            dump(errorData)
+                            dump(naverError)
                         case .se04:
-                            naverError(errorData)
+                            completion(.failure(CustomError.naverError(naverError)))
                         case .se05:
-                            dump(errorData)
+                            dump(naverError)
                         case .se06:
-                            dump(errorData)
+                            dump(naverError)
                         case .se99:
-                            naverError(errorData)
+                            completion(.failure(CustomError.naverError(naverError)))
+                        case .none:
+                            dump(naverError)
                         }
-                    } else {
-                        completion(.failure(error))
+                    } else if let value = try? JSONDecoder().decode(T.self, from: data) {
+                        completion(.success(value))
                     }
+                case .none:
+                    completion(.failure(CustomError.afError(data.error)))
                 }
             }
     }
