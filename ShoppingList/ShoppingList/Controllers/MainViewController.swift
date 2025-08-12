@@ -12,10 +12,7 @@ import Alamofire
 final class MainViewController: UIViewController {
     
     private let mainView = MainView()
-    
-    private let networkManager = NetworkManager.shared
-    
-    private var itemData: ItemData?
+    private let viewModel = MainViewModel()
     
     override func loadView() {
         view = mainView
@@ -24,6 +21,54 @@ final class MainViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setUpViewController()
+        binding()
+    }
+    
+    private func binding() {
+        
+        // 텍스트 검증
+        viewModel.outputTextValidate.lazyBind { [weak self] bool in
+            if bool {
+                ///TODO: - 2글자 미만 알럿, 클로저
+                self?.view.makeToast("검색어를 입력해주세요", position: .top)
+            }
+        }
+        
+        // URL 실패 바인딩
+        viewModel.outputURLFailed.lazyBind { [weak self] _ in
+            self?.view.makeToast("준비중입니다", position: .top)
+        }
+        
+        // 인디케이터 바인딩
+        viewModel.outputIndicatorStatus.lazyBind { [weak self] bool in
+            bool ? self?.mainView.activityIndicatorView.startAnimating() : self?.mainView.activityIndicatorView.stopAnimating()
+        }
+        
+        // 아이템 갯수 0개일 때 알럿
+        viewModel.outputNoResult.lazyBind { [weak self] bool in
+            if bool {
+                self?.showAlert(title: "검색결과 없음", message: "다른 검색어로 이용해보세요")
+                self?.mainView.searchBar.text = ""
+            }
+        }
+        
+        // 에러가 있으면 실행
+        viewModel.outputError.lazyBind { [weak self] error in
+            guard let self, let error else { return }
+            switch error {
+            case .naverError(let naverError):
+                self.showAlert(title: naverError.errorCode, message: naverError.errorMessage)
+            case .afError(let afError):
+                guard let afError else { return }
+                print(afError)
+            }
+        }
+        
+        viewModel.outputViewModel.lazyBind { [weak self] viewModel in
+            guard let viewModel else { return }
+            let vc = SearchListViewController(viewModel: viewModel)
+            self?.navigationController?.pushViewController(vc, animated: true)
+        }
     }
     
     private func setUpViewController() {
@@ -35,42 +80,8 @@ final class MainViewController: UIViewController {
 ///Mark: - SearchBar Delegate
 extension MainViewController: UISearchBarDelegate {
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
-        guard let text = searchBar.text, !text.trimmingCharacters(in: .whitespaces).isEmpty else {
-            ///TODO: - 2글자 미만 알럿, 클로저
-            view.makeToast("검색어를 입력해주세요", position: .top)
-            return
-        }
-        
-        mainView.activityIndicatorView.startAnimating()
-        
-        /// 검색 메서드 실행
-        let parmeter = ShopSearchParameter(query: text, display: 30)
-        let endPoint = NaverAPI.shopSearch(parmeter)
-        let url = networkManager.makeURL(from: endPoint)
-        
-        /// 네이버 에러응답 테스트 URL
-        //        let url = URL(string: "https://openapi.naver.com/v1/search/shop.json?query=마우스&display=10&sort=si")
-        guard let url else {
-            view.makeToast("준비중입니다", position: .top)
-            return
-        }
-        print(url.absoluteString)
-        networkManager.fetchData(url: url) { [weak self] (result: Result<ItemData, CustomError>) in
-            guard let self else { return }
-            switch result {
-            case .success(let itemData):
-                self.itemData = itemData
-                mainView.activityIndicatorView.stopAnimating()
-                if itemData.total == 0 {
-                    self.showAlert(title: "검색결과 없음", message: "다른 검색어로 이용해보세요")
-                    self.mainView.searchBar.text = ""
-                } else {
-                    let vc = SearchListViewController(title: text, data: itemData, urlString: url.absoluteString)
-                    navigationController?.pushViewController(vc, animated: true)
-                }
-            case .failure(let error):
-                print(error)
-            }
-        }
+        viewModel.inputSearchText.value = searchBar.text
+        viewModel.inputSearchButtonTapped.value = ()
+      
     }
 }
