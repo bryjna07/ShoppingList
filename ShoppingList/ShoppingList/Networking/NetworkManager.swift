@@ -20,14 +20,15 @@ final class NetworkManager {
     private init() {}
     
     /// API 요청 메서드
-    func fetchData<T: Decodable>(url: URL, completion: @escaping (Result<T, CustomError>) -> Void) {
+    func fetchData<T: Decodable>(api: Router, completion: @escaping (Result<T, CustomError>) -> Void) {
         
-        let header: HTTPHeaders = [
-            "X-Naver-Client-Id": APIKey.naverId,
-            "X-Naver-Client-Secret": APIKey.naverSecret,
-        ]
+        guard let url = api.endpint else { return }
         
-        AF.request(url, method: .get, headers: header)
+        AF.request(url,
+                   method: .get,
+                   parameters: api.parameter,
+                   headers: api.headers
+        )
             .validate(statusCode: 200..<500)
             .responseData{ data in
                 switch data.data {
@@ -59,14 +60,5 @@ final class NetworkManager {
                     completion(.failure(CustomError.afError(data.error)))
                 }
             }
-    }
-    
-    func makeURL(from endpoint: Endpoint) -> URL? {
-        var components = URLComponents()
-        components.scheme = endpoint.scheme
-        components.host = endpoint.host
-        components.path = endpoint.path
-        components.queryItems = endpoint.queryItems
-        return components.url
     }
 }

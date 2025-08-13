@@ -44,8 +44,6 @@ final class MainViewController: UIViewController {
                 self.view.makeToast("검색어를 입력해주세요", position: .top)
             case .textCount:
                 self.view.makeToast("2글자 이상 입력해주세요", position: .top)
-            case .urlFail:
-                self.view.makeToast("준비중입니다", position: .top)
             }
         }
         

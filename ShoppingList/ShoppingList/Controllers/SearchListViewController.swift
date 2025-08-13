@@ -69,8 +69,8 @@ final class SearchListViewController: UIViewController {
     
     //    private func makeHorizontalList() {
     //        listView.activityIndicatorView.startAnimating()
-    //        let param = ShopSearchParameter(query: "아이폰")
-    //        let endPoint = NaverAPI.shopSearch(param)
+    //        let param = NaverShopSearchParameter(query: "아이폰")
+    //        let endPoint = NaverShopSearchParameter(param)
     //        let url = networkManager.makeURL(from: endPoint)
     //        guard let url else { return }
     //        networkManager.fetchData(url: url) { [weak self] (result: Result<ItemData, CustomError>) in
@@ -155,7 +155,7 @@ extension SearchListViewController: UICollectionViewDelegate, UICollectionViewDa
 //
 //                isLoading = true // 중복호출 방지
 //
-//                guard let url = networkManager.makeURL(from: NaverAPI.shopSearch(param)) else { return }
+//                guard let url = networkManager.makeURL(from: NaverShopSearchParameter(param)) else { return }
 //                print(url)
 //                networkManager.fetchData(url: url) { [weak self] (result: Result<ItemData, CustomError>) in
 //                    guard let self else { return }
