@@ -13,53 +13,56 @@ final class SearchListViewModel {
     var horizontalList: [Item] = []
     private var parameter = ShopSearchParameter(query: "")
     private var urlString = ""
-//    private var currentStart = 1
-//    private var prefetchNumber = 0
-//    private var isLoading = false
+    //    private var currentStart = 1
+    //    private var prefetchNumber = 0
+    //    private var isLoading = false
     
     // Manager
     private let numberFormatter = YJFormatter.shared
     private let networkManager = NetworkManager.shared
     
-    // Input
-    var inputSimButtonTapped: Observable<Void> = Observable(())
-    var inputDateButtonTapped: Observable<Void> = Observable(())
-    var inputDscButtonTapped: Observable<Void> = Observable(())
-    var inputAscButtonTapped: Observable<Void> = Observable(())
+    var input: Input
+    var output: Output
     
-    // Output
-    var outputTitle = Observable("")
-    var outputTotalString = Observable("")
-    var outputItemList: Observable<[Item]> = Observable([])
-    // 인디케이터 on/off 상태
-    var outputIndicatorStatus: Observable<Bool> = Observable(false)
-    // 스크롤 위로
-    var outputScrollToItem: Observable<Void> = Observable(())
+    struct Input {
+        var simButtonTapped: Observable<Void> = Observable(())
+        var dateButtonTapped: Observable<Void> = Observable(())
+        var dscButtonTapped: Observable<Void> = Observable(())
+        var ascButtonTapped: Observable<Void> = Observable(())
+    }
+    
+    struct Output {
+        // Output
+        var title = Observable("")
+        var totalString = Observable("")
+        var itemList: Observable<[Item]> = Observable([])
+        // 인디케이터 on/off 상태
+        var indicatorStatus: Observable<Bool> = Observable(false)
+        // 스크롤 위로
+        var scrollToItem: Observable<Void> = Observable(())
+    }
     
     init(title: String, data: ItemData, urlString: String) {
-        self.outputTitle.value = title
-        self.outputTotalString.value = data.totalString
-        self.outputItemList.value = data.items
+        input = Input()
+        output = Output()
+        self.output.title.value = title
+        self.output.totalString.value = data.totalString
+        self.output.itemList.value = data.items
         self.parameter = ShopSearchParameter(query: title)
         self.urlString = urlString
         
-        inputSimButtonTapped.lazyBind { [weak self] _ in
+        input.simButtonTapped.lazyBind { [weak self] _ in
             self?.sortSim()
         }
-        
-        inputDateButtonTapped.lazyBind { [weak self] _ in
+        input.dateButtonTapped.lazyBind { [weak self] _ in
             self?.sortDate()
         }
-        
-        inputAscButtonTapped.lazyBind { [weak self] _ in
+        input.ascButtonTapped.lazyBind { [weak self] _ in
             self?.sortAsc()
         }
-        
-        inputDscButtonTapped.lazyBind { [weak self] _ in
+        input.dscButtonTapped.lazyBind { [weak self] _ in
             self?.sortDsc()
         }
-        
-       
     }
     
     private func sortSim() {
@@ -95,15 +98,15 @@ final class SearchListViewModel {
             print("중복방지")
             return
         }
-        outputIndicatorStatus.value = true
+        output.indicatorStatus.value = true
         networkManager.fetchData(url: url) { [weak self] (result: Result<ItemData, CustomError>) in
             guard let self else { return }
             switch result {
             case .success(let itemData):
-                outputItemList.value = itemData.items
+                output.itemList.value = itemData.items
                 urlString = url.absoluteString
-                outputIndicatorStatus.value = false
-                outputScrollToItem.value = ()
+                output.indicatorStatus.value = false
+                output.scrollToItem.value = ()
             case .failure(let error):
                 print("데이터 불러오기 실패: \(error.localizedDescription)")
             }

@@ -32,29 +32,29 @@ final class SearchListViewController: UIViewController {
         setupCollectionView()
         binding()
         buttonActionSetup()
-//        makeHorizontalList()
+        //        makeHorizontalList()
     }
     
     private func binding() {
         
-        viewModel.outputTitle.bind { [weak self] title in
+        viewModel.output.title.bind { [weak self] title in
             self?.navigationItem.title = title
         }
         
-        viewModel.outputTotalString.bind { [weak self] string in
+        viewModel.output.totalString.bind { [weak self] string in
             self?.listView.resultCountLabel.text = string
         }
         
-        viewModel.outputItemList.lazyBind { [weak self] list in
+        viewModel.output.itemList.lazyBind { [weak self] list in
             print("lazy bind")
             self?.listView.collectionView.reloadData()
         }
         
-        viewModel.outputIndicatorStatus.lazyBind { [weak self] bool in
+        viewModel.output.indicatorStatus.lazyBind { [weak self] bool in
             bool ? self?.listView.activityIndicatorView.startAnimating() : self?.listView.activityIndicatorView.stopAnimating()
         }
         
-        viewModel.outputScrollToItem.lazyBind { [weak self] _ in
+        viewModel.output.scrollToItem.lazyBind { [weak self] _ in
             self?.listView.collectionView.scrollToItem(at: IndexPath(item: 0, section: 0), at: .top, animated: false)
         }
     }
@@ -62,30 +62,29 @@ final class SearchListViewController: UIViewController {
     private func setupCollectionView() {
         listView.collectionView.delegate = self
         listView.collectionView.dataSource = self
-//        listView.collectionView.prefetchDataSource = self
-        
+        //        listView.collectionView.prefetchDataSource = self
         listView.horizontalCollectionView.delegate = self
         listView.horizontalCollectionView.dataSource = self
     }
     
-//    private func makeHorizontalList() {
-//        listView.activityIndicatorView.startAnimating()
-//        let param = ShopSearchParameter(query: "아이폰")
-//        let endPoint = NaverAPI.shopSearch(param)
-//        let url = networkManager.makeURL(from: endPoint)
-//        guard let url else { return }
-//        networkManager.fetchData(url: url) { [weak self] (result: Result<ItemData, CustomError>) in
-//            guard let self else { return }
-//            switch result {
-//            case .success(let itemData):
-//                self.horizontalList = itemData.items
-//                listView.activityIndicatorView.stopAnimating()
-//                self.listView.horizontalCollectionView.reloadData()
-//            case .failure(let error):
-//                print("데이터 불러오기 실패: \(error.localizedDescription)")
-//            }
-//        }
-//    }
+    //    private func makeHorizontalList() {
+    //        listView.activityIndicatorView.startAnimating()
+    //        let param = ShopSearchParameter(query: "아이폰")
+    //        let endPoint = NaverAPI.shopSearch(param)
+    //        let url = networkManager.makeURL(from: endPoint)
+    //        guard let url else { return }
+    //        networkManager.fetchData(url: url) { [weak self] (result: Result<ItemData, CustomError>) in
+    //            guard let self else { return }
+    //            switch result {
+    //            case .success(let itemData):
+    //                self.horizontalList = itemData.items
+    //                listView.activityIndicatorView.stopAnimating()
+    //                self.listView.horizontalCollectionView.reloadData()
+    //            case .failure(let error):
+    //                print("데이터 불러오기 실패: \(error.localizedDescription)")
+    //            }
+    //        }
+    //    }
     
     private func buttonActionSetup() {
         listView.sortViews[0].button.addTarget(self, action: #selector(sortSimTapped), for: .touchUpInside)
@@ -95,28 +94,24 @@ final class SearchListViewController: UIViewController {
     }
     
     @objc private func sortSimTapped() {
-        viewModel.inputSimButtonTapped.value = ()
+        viewModel.input.simButtonTapped.value = ()
     }
-    
     @objc private func sortDateTapped() {
-        viewModel.inputDateButtonTapped.value = ()
+        viewModel.input.dateButtonTapped.value = ()
     }
-    
     @objc private func sortAscTapped() {
-        viewModel.inputAscButtonTapped.value = ()
+        viewModel.input.ascButtonTapped.value = ()
     }
-    
     @objc private func sortDscTapped() {
-        viewModel.inputDscButtonTapped.value = ()
+        viewModel.input.dscButtonTapped.value = ()
     }
-    
 }
 
 ///Mark: - CollectionView Protocols
 extension SearchListViewController: UICollectionViewDelegate, UICollectionViewDataSource {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         if collectionView == listView.collectionView {
-            return viewModel.outputItemList.value.count
+            return viewModel.output.itemList.value.count
         } else if collectionView == listView.horizontalCollectionView {
             return viewModel.horizontalList.count
         } else {
@@ -127,7 +122,7 @@ extension SearchListViewController: UICollectionViewDelegate, UICollectionViewDa
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         if collectionView == listView.collectionView {
             guard let cell = listView.collectionView.dequeueReusableCell(withReuseIdentifier: ItemCell.id, for: indexPath) as? ItemCell else { return UICollectionViewCell() }
-            cell.item = viewModel.outputItemList.value[indexPath.row]
+            cell.item = viewModel.output.itemList.value[indexPath.row]
             return cell
         } else if collectionView == listView.horizontalCollectionView {
             guard let cell = listView.horizontalCollectionView.dequeueReusableCell(withReuseIdentifier: horizontalCell.id, for: indexPath) as? horizontalCell else { return UICollectionViewCell() }
@@ -140,7 +135,7 @@ extension SearchListViewController: UICollectionViewDelegate, UICollectionViewDa
 }
 
 //extension SearchListViewController: UICollectionViewDataSourcePrefetching {
-//    
+//
 //    // indexpath가 count 갯수 - 10 일때 미리 불러오기
 //    func collectionView(_ collectionView: UICollectionView, prefetchItemsAt indexPaths: [IndexPath]) {
 //        if collectionView == listView.collectionView {
@@ -148,18 +143,18 @@ extension SearchListViewController: UICollectionViewDelegate, UICollectionViewDa
 //                print("두번호출")
 //                return
 //            }
-//                
+//
 //            let lastItem = indexPaths.map { $0.item }.sorted(by: <).last
-//            
+//
 //            guard let lastItem else { return }
 //            if list.count > 29, lastItem >= list.count - 10 {
 //                if self.parameter?.start == 1 {
 //                    self.parameter?.start += 30
 //                }
 //                guard let param = self.parameter else { return }
-//                
+//
 //                isLoading = true // 중복호출 방지
-//                
+//
 //                guard let url = networkManager.makeURL(from: NaverAPI.shopSearch(param)) else { return }
 //                print(url)
 //                networkManager.fetchData(url: url) { [weak self] (result: Result<ItemData, CustomError>) in
@@ -178,10 +173,10 @@ extension SearchListViewController: UICollectionViewDelegate, UICollectionViewDa
 //                }
 //            }
 //        }
-//        
+//
 //    }
-//    
-//    
+//
+//
 //    // 취소 , count 갯수가 일정 수 넘어갈 때
 //    func collectionView(_ collectionView: UICollectionView, cancelPrefetchingForItemsAt indexPaths: [IndexPath]) {
 //        if collectionView == listView.collectionView {

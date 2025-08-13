@@ -26,18 +26,18 @@ final class MainViewController: UIViewController {
     private func binding() {
         
         // 인디케이터 바인딩
-        viewModel.outputIndicatorStatus.lazyBind { [weak self] bool in
+        viewModel.output.indicatorStatus.lazyBind { [weak self] bool in
             bool ? self?.mainView.activityIndicatorView.startAnimating() : self?.mainView.activityIndicatorView.stopAnimating()
         }
         
         // 아이템 갯수 0개일 때 알럿
-        viewModel.outputNoResult.lazyBind { [weak self] _ in
+        viewModel.output.noResult.lazyBind { [weak self] _ in
             self?.showAlert(title: "검색결과 없음", message: "다른 검색어로 이용해보세요")
             self?.mainView.searchBar.text = ""
         }
         
         // 에러가 있으면 실행
-        viewModel.outputError.lazyBind { [weak self] error in
+        viewModel.output.error.lazyBind { [weak self] error in
             guard let self, let error else { return }
             switch error {
             case .isEmpty:
@@ -48,9 +48,9 @@ final class MainViewController: UIViewController {
                 self.view.makeToast("준비중입니다", position: .top)
             }
         }
-            
+        
         // 결과 바인딩 - 뷰모델 만들기 성공 -> 화면이동, 실패 -> 알럿
-        viewModel.outputResult.lazyBind { [weak self] (result: Result<SearchListViewModel, CustomError>?) in
+        viewModel.output.result.lazyBind { [weak self] (result: Result<SearchListViewModel, CustomError>?) in
             guard let result else { return }
             switch result {
             case .success(let viewModel):
@@ -66,7 +66,7 @@ final class MainViewController: UIViewController {
             }
         }
     }
-
+    
     private func setUpViewController() {
         title = "영캠러의 쇼핑쇼핑"
         mainView.searchBar.delegate = self
@@ -76,8 +76,8 @@ final class MainViewController: UIViewController {
 ///Mark: - SearchBar Delegate
 extension MainViewController: UISearchBarDelegate {
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
-        viewModel.inputSearchText.value = searchBar.text
-        viewModel.inputSearchButtonTapped.value = ()
-      
+        viewModel.input.searchText.value = searchBar.text
+        viewModel.input.searchButtonTapped.value = ()
+        
     }
 }
